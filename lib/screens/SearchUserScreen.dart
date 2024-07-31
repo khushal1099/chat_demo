@@ -78,16 +78,11 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                               var user = sData[index];
                               return ListTile(
                                 onTap: () {
-                                  Get.to(
-                                    () => const ChatScreen(),
-                                    arguments: {
-                                      "uid": user.uid,
-                                      "fullname": user.fullname,
-                                      "email": user.email,
-                                      "profilePic": user.profilePic,
-                                      "time": user.time,
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) {
+                                      return ChatScreen(userModel: user);
                                     },
-                                  );
+                                  ));
                                 },
                                 title: Text(user.fullname ?? ''),
                                 subtitle: Text(user.email ?? ''),
@@ -114,16 +109,11 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                                 var d = uData[index];
                                 return ListTile(
                                   onTap: () {
-                                    Get.to(
-                                      () => const ChatScreen(),
-                                      arguments: {
-                                        "uid": d.uid,
-                                        "fullname": d.fullname,
-                                        "email": d.email,
-                                        "profilePic": d.profilePic,
-                                        "time": d.time,
+                                    Navigator.push(context, MaterialPageRoute(
+                                      builder: (context) {
+                                        return ChatScreen(userModel: d);
                                       },
-                                    );
+                                    ));
                                   },
                                   title: Text(d.fullname.toString()),
                                   subtitle: Text(d.email.toString()),

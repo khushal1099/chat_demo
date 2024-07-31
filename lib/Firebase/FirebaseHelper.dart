@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:chat_demo/models/ChatRoomModel.dart';
 import 'package:chat_demo/models/UserModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,12 +15,13 @@ class FBHelper {
   }
 
   static const users = 'Users';
+  static const chats = 'Chats';
+  static const messages = 'Messages';
 
   static var cu = FirebaseAuth.instance.currentUser;
 
-  Stream<QuerySnapshot<Map<String,dynamic>>> getSearchedUser(String value){
-    var data = FirebaseFirestore
-        .instance
+  Stream<QuerySnapshot<Map<String, dynamic>>> getSearchedUser(String value) {
+    var data = FirebaseFirestore.instance
         .collection(users)
         .where("fullname", isEqualTo: value)
         .snapshots();
@@ -31,6 +33,17 @@ class FBHelper {
         .collection(users)
         .where('email', isNotEqualTo: email)
         .orderBy('email', descending: false)
+        .snapshots();
+    return data;
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getMessages(String chatroomId) {
+    var data = FirebaseFirestore.instance
+        .collection(FBHelper.chats)
+        .doc(chatroomId)
+        .collection(FBHelper.messages)
+        .orderBy('time', descending: false)
+        .limitToLast(20)
         .snapshots();
     return data;
   }
@@ -73,5 +86,80 @@ class FBHelper {
         .collection(users) // Ensure 'users' is the correct collection name
         .doc(uid)
         .update(userModel.toJson());
+  }
+
+  Future<void> sendMessage(
+      String senderId,
+      String receiverId,
+      String senderEmail,
+      String receiverEmail,
+      String message,
+      String receiverName,
+      String senderName,
+      String senderImage,
+      String receiverImage) async {
+    var doc1 = await FirebaseFirestore.instance
+        .collection(chats)
+        .doc("$senderId-$receiverId")
+        .get();
+
+    var doc2 = await FirebaseFirestore.instance
+        .collection(chats)
+        .doc("$receiverId-$senderId")
+        .get();
+
+    doc1.reference.set({
+      "last_msg": message,
+      "sender_email": senderEmail,
+      "receiver_email": receiverEmail,
+      "senderId": senderId,
+      "receiverId": receiverId,
+      "receiver_name": receiverName,
+      "sender_name": senderName,
+      "sender_image": senderImage,
+      "receiver_image": receiverImage
+    });
+
+    doc2.reference.set({
+      "last_msg": message,
+      "sender_email": receiverEmail,
+      "receiver_email": senderEmail,
+      "senderId": receiverId,
+      "receiverId": senderId,
+      "receiver_name": senderName,
+      "sender_name": receiverName,
+      "sender_image": receiverImage,
+      "receiver_image": senderImage
+    });
+
+    doc1.reference
+        .collection(messages)
+        .doc(DateTime.now().millisecondsSinceEpoch.toString())
+        .set(ChatModel(
+                message: message,
+                senderId: senderId,
+                senderEmail: senderEmail,
+                time: "${DateTime.now()}")
+            .toJson());
+
+    doc2.reference
+        .collection(messages)
+        .doc(DateTime.now().millisecondsSinceEpoch.toString())
+        .set(ChatModel(
+                message: message,
+                senderId: senderId,
+                senderEmail: senderEmail,
+                time: "${DateTime.now()}")
+            .toJson());
+  }
+
+  Future<ChatModel> chatData(String chatroomId) async {
+    var data = await FirebaseFirestore.instance
+        .collection(FBHelper.chats)
+        .doc(chatroomId)
+        .get();
+
+    var chatData = ChatModel.fromJson(data.data() as Map<String, dynamic>);
+    return chatData;
   }
 }
