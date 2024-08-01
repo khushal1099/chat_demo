@@ -1,3 +1,4 @@
+import 'package:chat_demo/controllers/ChatScreenController.dart';
 import 'package:chat_demo/controllers/SearchUserScreenController.dart';
 import 'package:chat_demo/models/UserModel.dart';
 import 'package:chat_demo/screens/ChatScreen.dart';
@@ -22,6 +23,7 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
   TextEditingController search = TextEditingController();
   SearchUserScreenController searchUserScreenController =
       SearchUserScreenController();
+  ChatScreenController cc = ChatScreenController();
 
   @override
   Widget build(BuildContext context) {
@@ -109,6 +111,7 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                                 var d = uData[index];
                                 return ListTile(
                                   onTap: () {
+
                                     Navigator.push(context, MaterialPageRoute(
                                       builder: (context) {
                                         return ChatScreen(userModel: d);

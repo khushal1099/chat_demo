@@ -37,14 +37,26 @@ class FBHelper {
     return data;
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getMessages(String chatroomId) {
-    var data = FirebaseFirestore.instance
+  Future<QuerySnapshot<Map<String, dynamic>>> getMessages(String chatroomId) async {
+    var data = await FirebaseFirestore.instance
         .collection(FBHelper.chats)
         .doc(chatroomId)
         .collection(FBHelper.messages)
         .orderBy('time', descending: false)
         .limitToLast(20)
-        .snapshots();
+        .get();
+    return data;
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> getMoreMessages(String chatroomId,String msgTime) async {
+    var data = await FirebaseFirestore.instance
+        .collection(FBHelper.chats)
+        .doc(chatroomId)
+        .collection(FBHelper.messages)
+        .where('time', isLessThan: msgTime)
+        .orderBy('time', descending: false)
+        .limitToLast(20)
+        .get();
     return data;
   }
 

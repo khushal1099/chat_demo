@@ -33,23 +33,39 @@ class _ChatScreenState extends State<ChatScreen> {
     } else {
       chatroomId = "${widget.userModel.uid}-$senderId";
     }
-
-    getMessages();
+    cc.messageList.putIfAbsent(widget.userModel.email.toString(), () => []);
+    getMoreMessages();
     super.initState();
   }
 
-  void getMessages() {
-    stream = FBHelper().getMessages(chatroomId.toString());
+  bool isLoading = false;
+
+  void getMoreMessages() async {
+    var data = await FBHelper().getMessages(chatroomId.toString());
+    var msg = data.docs.map((e) => ChatModel.fromJson(e.data())).toList();
+    cc.list?.value = cc.messageList[widget.userModel.email]!;
+    for (var newMsg in msg) {
+      if (!cc.list!.any((oldMsg) => oldMsg.time == newMsg.time)) {
+        cc.list?.add(newMsg);
+      }
+    }
     scrollController.addListener(
-          () {
+      () async {
         if (scrollController.offset <=
-            scrollController.position.minScrollExtent + 10) {
-          stream = FirebaseFirestore.instance
-              .collection(FBHelper.chats)
-              .doc(chatroomId)
-              .collection(FBHelper.messages)
-              .where('time',isGreaterThan: widget.userModel.time)
-              .snapshots();
+                scrollController.position.minScrollExtent + 10 &&
+            !isLoading) {
+          isLoading = true;
+          var data = await FBHelper().getMoreMessages(
+              chatroomId.toString(), cc.list!.first.time.toString());
+          var moreMsg =
+              data.docs.map((e) => ChatModel.fromJson(e.data())).toList();
+          for (var newMsg in moreMsg) {
+            if (!cc.list!.any((oldMsg) => oldMsg.time == newMsg.time)) {
+              cc.list?.insert(0, newMsg);
+            }
+          }
+          cc.list?.sort((a, b) => a.time!.compareTo(b.time!));
+          isLoading = false;
         }
       },
     );
@@ -58,11 +74,10 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback(
-          (_) {
+      (_) {
         scrollController.jumpTo(scrollController.position.maxScrollExtent);
       },
     );
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
@@ -86,54 +101,47 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: Container(
-                color: Colors.blue.withOpacity(0.2),
-                child: StreamBuilder(
-                  stream: stream,
-                  builder: (context, snapshot) {
-                    var data = snapshot.data?.docs ?? [];
-                    var msgList = data
-                        .map((item) => ChatModel.fromJson(item.data()))
-                        .toList();
-
-                    return ListView.builder(
-                      controller: scrollController,
-                      itemCount: msgList.length,
-                      itemBuilder: (context, index) {
-                        var msg = msgList[index];
-                        var isMyMsg = senderId == msg.senderId;
-                        return Row(
-                          mainAxisAlignment: isMyMsg
-                              ? MainAxisAlignment.end
-                              : MainAxisAlignment.start,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (!isMyMsg)
-                              CircleAvatar(
-                                maxRadius: 10,
-                                backgroundImage: widget.userModel.profilePic !=
-                                    null
-                                    ? NetworkImage(
+              color: Colors.blue.withOpacity(0.2),
+              child: Obx(() {
+                return ListView.builder(
+                  controller: scrollController,
+                  itemCount: cc.list?.length,
+                  physics: const BouncingScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    var msg = cc.list?[index];
+                    var isMyMsg = senderId == msg?.senderId;
+                    return Row(
+                      mainAxisAlignment: isMyMsg
+                          ? MainAxisAlignment.end
+                          : MainAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!isMyMsg)
+                          CircleAvatar(
+                            maxRadius: 10,
+                            backgroundImage: widget.userModel.profilePic != null
+                                ? NetworkImage(
                                     widget.userModel.profilePic.toString())
-                                    : null,
-                              ),
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              margin: const EdgeInsets.only(bottom: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                msg.message ?? '',
-                                style: const TextStyle(color: Colors.black),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
+                                : null,
+                          ),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          margin: const EdgeInsets.only(bottom: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            msg?.message ?? '',
+                            style: const TextStyle(color: Colors.black),
+                          ),
+                        ),
+                      ],
                     );
                   },
-                )),
+                );
+              }),
+            ),
           ),
           Container(
             height: 80,
@@ -149,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       .doc(cu?.uid ?? "")
                       .get();
                   var userData =
-                  UserModel.fromJson(sn.data() as Map<String, dynamic>);
+                      UserModel.fromJson(sn.data() as Map<String, dynamic>);
                   if (value.isNotEmpty) {
                     FBHelper().sendMessage(
                       cu!.uid,
@@ -162,47 +170,61 @@ class _ChatScreenState extends State<ChatScreen> {
                       userData.profilePic ?? '',
                       widget.userModel.profilePic ?? '',
                     );
+                    cc.list?.add(ChatModel(
+                        senderId: cu.uid,
+                        senderEmail: cu.email,
+                        message: chat.text,
+                        time: DateTime.now().toString()));
+                    scrollController
+                        .jumpTo(scrollController.position.maxScrollExtent);
                     chat.clear();
                   }
                 },
                 suffixIcon: Obx(
-                      () => cc.isSend.value
+                  () => cc.isSend.value
                       ? IconButton(
-                    onPressed: () async {
-                      var cu = FirebaseAuth.instance.currentUser;
-                      var sn = await FirebaseFirestore.instance
-                          .collection("Users")
-                          .doc(cu?.uid ?? "")
-                          .get();
-                      var userData = UserModel.fromJson(
-                          sn.data() as Map<String, dynamic>);
-                      if (chat.text.isNotEmpty) {
-                        FBHelper().sendMessage(
-                          cu!.uid,
-                          widget.userModel.uid ?? '',
-                          cu.email ?? '',
-                          widget.userModel.email ?? '',
-                          chat.text,
-                          widget.userModel.fullname ?? '',
-                          userData.fullname ?? '',
-                          userData.profilePic ?? '',
-                          widget.userModel.profilePic ?? '',
-                        );
-                        chat.clear();
-                      }
-                    },
-                    icon: Icon(
-                      Icons.send,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                  )
+                          onPressed: () async {
+                            var cu = FirebaseAuth.instance.currentUser;
+                            var sn = await FirebaseFirestore.instance
+                                .collection("Users")
+                                .doc(cu?.uid ?? "")
+                                .get();
+                            var userData = UserModel.fromJson(
+                                sn.data() as Map<String, dynamic>);
+                            if (chat.text.isNotEmpty) {
+                              FBHelper().sendMessage(
+                                cu!.uid,
+                                widget.userModel.uid ?? '',
+                                cu.email ?? '',
+                                widget.userModel.email ?? '',
+                                chat.text,
+                                widget.userModel.fullname ?? '',
+                                userData.fullname ?? '',
+                                userData.profilePic ?? '',
+                                widget.userModel.profilePic ?? '',
+                              );
+                              cc.list?.add(ChatModel(
+                                  senderId: cu.uid,
+                                  senderEmail: cu.email,
+                                  message: chat.text,
+                                  time: DateTime.now().toString()));
+                              scrollController.jumpTo(
+                                  scrollController.position.maxScrollExtent);
+                              chat.clear();
+                            }
+                          },
+                          icon: Icon(
+                            Icons.send,
+                            color: Colors.white.withOpacity(0.6),
+                          ),
+                        )
                       : IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.camera_alt,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                  ),
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.camera_alt,
+                            color: Colors.white.withOpacity(0.6),
+                          ),
+                        ),
                 ),
                 onChanged: (value) {
                   cc.isSend.value = value.isNotEmpty;
