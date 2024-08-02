@@ -147,6 +147,7 @@ class TFF extends StatelessWidget {
   TextStyle? hintStyle;
   TextStyle? style;
   Color? cursorColor;
+  bool outSideTap;
 
   TFF({
     super.key,
@@ -162,6 +163,7 @@ class TFF extends StatelessWidget {
     this.hintStyle,
     this.style,
     this.cursorColor,
+    this.outSideTap = true,
   });
 
   @override
@@ -173,25 +175,33 @@ class TFF extends StatelessWidget {
         onChanged: onChanged,
         onFieldSubmitted: onFieldSubmitted,
         onTapOutside: (event) {
-          FocusScope.of(context).unfocus();
+          if (outSideTap) {
+            FocusScope.of(context).unfocus();
+          }
         },
         style: style,
         textInputAction: TextInputAction.next,
         keyboardType: keyboardType,
         obscureText: obsecureText,
         decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: hintStyle,
-            border: const OutlineInputBorder(
-              borderRadius: BorderRadius.all(Radius.circular(40)),
+          hintText: hintText,
+          hintStyle: hintStyle,
+          border: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(40)),
+            borderSide: BorderSide(color: Colors.grey),
+          ),
+          filled: true,
+          fillColor: Colors.black.withOpacity(0.1),
+          prefixIcon: icon,
+          suffixIcon: suffixIcon,
+          contentPadding: const EdgeInsets.all(12),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(
+              Radius.circular(40),
             ),
-            filled: true,
-            fillColor: Colors.black.withOpacity(0.1),
-            prefixIcon: icon,
-            suffixIcon: suffixIcon,
-            contentPadding: const EdgeInsets.all(12),
-            enabledBorder: const OutlineInputBorder(
-                borderRadius: BorderRadius.all(Radius.circular(40)))),
+            borderSide: BorderSide(color: Colors.grey),
+          ),
+        ),
         cursorColor: cursorColor,
         validator: validator,
         autofocus: true,

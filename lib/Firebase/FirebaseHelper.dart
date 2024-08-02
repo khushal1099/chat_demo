@@ -17,8 +17,8 @@ class FBHelper {
   static const users = 'Users';
   static const chats = 'Chats';
   static const messages = 'Messages';
-
-  static var cu = FirebaseAuth.instance.currentUser;
+  static const newMsg = 'NewMessages';
+  static var newMsgStream;
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getSearchedUser(String value) {
     var data = FirebaseFirestore.instance
@@ -29,6 +29,8 @@ class FBHelper {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getUserList(String email) {
+    var cu = FirebaseAuth.instance.currentUser;
+    print('cu?.email===============> ${cu?.email}');
     var data = FirebaseFirestore.instance
         .collection(users)
         .where('email', isNotEqualTo: email)
@@ -39,10 +41,13 @@ class FBHelper {
 
   Future<QuerySnapshot<Map<String, dynamic>>> getMessages(
       String chatroomId) async {
+    var cu = FirebaseAuth.instance.currentUser;
     var data = await FirebaseFirestore.instance
-        .collection(FBHelper.chats)
+        .collection(users)
+        .doc(cu?.uid)
+        .collection(chats)
         .doc(chatroomId)
-        .collection(FBHelper.messages)
+        .collection(messages)
         .orderBy('time', descending: false)
         .limitToLast(20)
         .get();
@@ -51,14 +56,32 @@ class FBHelper {
 
   Future<QuerySnapshot<Map<String, dynamic>>> getMoreMessages(
       String chatroomId, String msgTime) async {
+    var cu = FirebaseAuth.instance.currentUser;
     var data = await FirebaseFirestore.instance
-        .collection(FBHelper.chats)
+        .collection(users)
+        .doc(cu?.uid)
+        .collection(chats)
         .doc(chatroomId)
-        .collection(FBHelper.messages)
+        .collection(messages)
         .where('time', isLessThan: msgTime)
         .orderBy('time', descending: false)
         .limitToLast(20)
         .get();
+    return data;
+  }
+
+  Future<Stream<QuerySnapshot<Map<String, dynamic>>>> getNewMsg(
+      String chatroomId) async {
+    var cu = FirebaseAuth.instance.currentUser;
+    var data = FirebaseFirestore.instance
+        .collection(users)
+        .doc(cu?.uid)
+        .collection(chats)
+        .doc(chatroomId)
+        .collection(newMsg)
+        .orderBy('time', descending: false)
+        .limitToLast(1)
+        .snapshots();
     return data;
   }
 
@@ -103,48 +126,35 @@ class FBHelper {
   }
 
   Future<void> sendMessage(
-      String senderId,
-      String receiverId,
-      String senderEmail,
-      String receiverEmail,
-      String message,
-      String receiverName,
-      String senderName,
-      String senderImage,
-      String receiverImage) async {
+    String senderId,
+    String senderEmail,
+    String message,
+    String chatroomId,
+    String date,
+  ) async {
+    var cu = FirebaseAuth.instance.currentUser;
     var doc1 = await FirebaseFirestore.instance
+        .collection(users)
+        .doc(cu?.uid)
         .collection(chats)
-        .doc("$senderId-$receiverId")
-        .get();
-
-    var doc2 = await FirebaseFirestore.instance
-        .collection(chats)
-        .doc("$receiverId-$senderId")
+        .doc(chatroomId)
         .get();
 
     doc1.reference.set({
       "last_msg": message,
       "sender_email": senderEmail,
-      "receiver_email": receiverEmail,
       "senderId": senderId,
-      "receiverId": receiverId,
-      "receiver_name": receiverName,
-      "sender_name": senderName,
-      "sender_image": senderImage,
-      "receiver_image": receiverImage
     });
 
-    doc2.reference.set({
-      "last_msg": message,
-      "sender_email": receiverEmail,
-      "receiver_email": senderEmail,
-      "senderId": receiverId,
-      "receiverId": senderId,
-      "receiver_name": senderName,
-      "sender_name": receiverName,
-      "sender_image": receiverImage,
-      "receiver_image": senderImage
-    });
+    newMsgStream = doc1.reference
+        .collection(newMsg)
+        .doc(DateTime.now().millisecondsSinceEpoch.toString())
+        .set(ChatModel(
+                message: message,
+                senderId: senderId,
+                senderEmail: senderEmail,
+                time: date)
+            .toJson());
 
     doc1.reference
         .collection(messages)
@@ -153,27 +163,7 @@ class FBHelper {
                 message: message,
                 senderId: senderId,
                 senderEmail: senderEmail,
-                time: "${DateTime.now()}")
+                time: date)
             .toJson());
-
-    doc2.reference
-        .collection(messages)
-        .doc(DateTime.now().millisecondsSinceEpoch.toString())
-        .set(ChatModel(
-                message: message,
-                senderId: senderId,
-                senderEmail: senderEmail,
-                time: "${DateTime.now()}")
-            .toJson());
-  }
-
-  Future<ChatModel> chatData(String chatroomId) async {
-    var data = await FirebaseFirestore.instance
-        .collection(FBHelper.chats)
-        .doc(chatroomId)
-        .get();
-
-    var chatData = ChatModel.fromJson(data.data() as Map<String, dynamic>);
-    return chatData;
   }
 }
