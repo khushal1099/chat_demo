@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:chat_demo/Firebase/FirebaseHelper.dart';
 import 'package:chat_demo/Utils/SizeUtils.dart';
 import 'package:chat_demo/controllers/ChatScreenController.dart';
@@ -101,7 +103,14 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: Container(
-              color: Colors.blue.withOpacity(0.2),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.2),
+                image: const DecorationImage(
+                  image: AssetImage('assets/chat bg.jpg'),
+
+                  fit: BoxFit.cover,
+                ),
+              ),
               child: Obx(() {
                 return ListView.builder(
                   controller: scrollController,
@@ -128,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           padding: const EdgeInsets.all(10),
                           margin: const EdgeInsets.only(bottom: 4),
                           decoration: BoxDecoration(
-                            color: Colors.blue.withOpacity(0.8),
+                            color: Colors.blue,
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -170,11 +179,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       userData.profilePic ?? '',
                       widget.userModel.profilePic ?? '',
                     );
-                    cc.list?.add(ChatModel(
-                        senderId: cu.uid,
-                        senderEmail: cu.email,
-                        message: chat.text,
-                        time: DateTime.now().toString()));
+
                     scrollController
                         .jumpTo(scrollController.position.maxScrollExtent);
                     chat.clear();
@@ -203,11 +208,6 @@ class _ChatScreenState extends State<ChatScreen> {
                                 userData.profilePic ?? '',
                                 widget.userModel.profilePic ?? '',
                               );
-                              cc.list?.add(ChatModel(
-                                  senderId: cu.uid,
-                                  senderEmail: cu.email,
-                                  message: chat.text,
-                                  time: DateTime.now().toString()));
                               scrollController.jumpTo(
                                   scrollController.position.maxScrollExtent);
                               chat.clear();

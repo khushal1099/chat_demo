@@ -37,7 +37,8 @@ class FBHelper {
     return data;
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> getMessages(String chatroomId) async {
+  Future<QuerySnapshot<Map<String, dynamic>>> getMessages(
+      String chatroomId) async {
     var data = await FirebaseFirestore.instance
         .collection(FBHelper.chats)
         .doc(chatroomId)
@@ -48,7 +49,8 @@ class FBHelper {
     return data;
   }
 
-  Future<QuerySnapshot<Map<String, dynamic>>> getMoreMessages(String chatroomId,String msgTime) async {
+  Future<QuerySnapshot<Map<String, dynamic>>> getMoreMessages(
+      String chatroomId, String msgTime) async {
     var data = await FirebaseFirestore.instance
         .collection(FBHelper.chats)
         .doc(chatroomId)
@@ -85,7 +87,7 @@ class FBHelper {
   Future<void> completeUserProfile(
       String image, String name, String uid, String email) async {
     final storageRef =
-        FirebaseStorage.instance.ref().child('user_images').child('${uid}.jpg');
+        FirebaseStorage.instance.ref().child('user_images').child('$uid.jpg');
     await storageRef.putFile(File(image));
     final imageUrl = await storageRef.getDownloadURL();
     UserModel userModel = UserModel(
@@ -95,7 +97,7 @@ class FBHelper {
         profilePic: imageUrl,
         time: DateTime.now().toString());
     await FirebaseFirestore.instance
-        .collection(users) // Ensure 'users' is the correct collection name
+        .collection(users)
         .doc(uid)
         .update(userModel.toJson());
   }

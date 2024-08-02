@@ -88,10 +88,11 @@ class CompleteProfileScreen extends StatelessWidget {
                   var cu = FirebaseAuth.instance.currentUser;
                   if (name.text.isNotEmpty) {
                     await FBHelper().completeUserProfile(
-                        completeProfileScreenController.image.value,
-                        name.text,
-                        cu!.uid,
-                        cu.email!);
+                      completeProfileScreenController.image.value,
+                      name.text,
+                      cu!.uid,
+                      cu.email!,
+                    );
                     name.clear();
                     completeProfileScreenController.image.value = '';
                     Get.offAll(const HomePage());
