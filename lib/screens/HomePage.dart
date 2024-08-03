@@ -1,5 +1,6 @@
 import 'package:chat_demo/Firebase/FirebaseHelper.dart';
-import 'package:chat_demo/models/ChatRoomModel.dart';
+import 'package:chat_demo/controllers/ChatScreenController.dart';
+import 'package:chat_demo/models/UserModel.dart';
 import 'package:chat_demo/screens/SearchUserScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,11 +8,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'LoginScreen.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  ChatScreenController cc = ChatScreenController();
+
+  @override
   Widget build(BuildContext context) {
+    cc.getfriendList();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
@@ -28,29 +37,24 @@ class HomePage extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder(
-        stream:
-            FirebaseFirestore.instance.collection(FBHelper.chats).snapshots(),
-        builder: (context, snapshot) {
-          var data = snapshot.data?.docs;
-          var chatUsers =
-              data?.map((e) => ChatModel.fromJson(e.data())).toList();
-          if (chatUsers != null) {
-            return ListView.builder(
-              itemCount: chatUsers.length,
-              itemBuilder: (context, index) {
-                var cUsers = chatUsers[index];
-                return const Text('-');
-              },
+      body: Obx(() {
+        var list = cc.friendsList.value;
+        return ListView.builder(
+          itemCount: list.length,
+          itemBuilder: (context, index) {
+            var data = list[index];
+            return ListTile(
+              title: Text(data.fullname ?? ''),
+              subtitle: Text(data.email ?? ''),
             );
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
+          },
+        );
+      }),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Get.to(() => const SearchUserScreen());
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => SearchUserScreen()));
+          // Get.to(() => const SearchUserScreen());
         },
         backgroundColor: Colors.blue,
         child: const Icon(

@@ -6,6 +6,8 @@ import 'package:chat_demo/models/UserModel.dart';
 import 'package:chat_demo/screens/LoginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -81,7 +83,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
     var sn =
         await FirebaseFirestore.instance.collection("Users").doc(cu?.uid).get();
-
     var userData = UserModel.fromJson(sn.data() as Map<String, dynamic>);
     if (v != null) {
       String date = DateTime.now().toString();
@@ -93,36 +94,43 @@ class _ChatScreenState extends State<ChatScreen> {
             senderId: cu?.uid,
             time: date,
           ));
+
+      var fMsg = await FBHelper().getMessages(chatroomId);
+      var fMsgdata =
+          fMsg.docs.map((e) => ChatModel.fromJson(e.data())).toList();
+
       FBHelper().sendMessage(
-        cu?.uid ?? '',
-        cu?.email ?? '',
-        v,
-        chatroomId,
-        date,
-      );
+          cu?.uid ?? '',
+          cu?.email ?? '',
+          v,
+          chatroomId,
+          date,
+          fMsgdata.first.message.toString(),
+          widget.userModel.uid.toString());
+
       chat.clear();
+
+      if (!cc.friendsIdList.contains(widget.userModel.uid)) {
+        await FBHelper().addFriend(widget.userModel.uid.toString());
+        cc.getfriendList();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // print('${cu?.email} ====================> ${cu?.uid}');
-    // print('${widget.userModel.email}==============>${widget.userModel.uid}');
-    // print(chatroomId);
-    // print(cc.messageList.map(
-    //   (key, value) => MapEntry(
-    //       key,
-    //       value.map(
-    //         (e) => e.toJson(),
-    //       )),
-    // ));
-
-    print(cc.list?.map((element) => element.message));
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: const Color(0xff101010),
         foregroundColor: Colors.white,
+        leading: IconButton(
+          onPressed: () {
+            FBHelper().removeNewMSgCol(chatroomId);
+            Get.back();
+          },
+          icon: const Icon(CupertinoIcons.back),
+        ),
         title: Row(
           children: [
             CircleAvatar(
