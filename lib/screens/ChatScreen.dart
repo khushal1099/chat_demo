@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:chat_demo/Firebase/FirebaseHelper.dart';
 import 'package:chat_demo/Utils/SizeUtils.dart';
 import 'package:chat_demo/controllers/ChatScreenController.dart';
@@ -6,7 +8,6 @@ import 'package:chat_demo/models/UserModel.dart';
 import 'package:chat_demo/screens/LoginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -51,7 +52,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 scrollController.position.minScrollExtent + 10 &&
             !isLoading) {
           isLoading = true;
-
           cc.getMessages(chatroomId, cc.list!.first.time.toString());
           isLoading = false;
         }
@@ -72,6 +72,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void sendMessage(var value, var message) async {
+    chat.clear();
     String? v;
     if (value != null && message == null) {
       v = value;
@@ -100,20 +101,21 @@ class _ChatScreenState extends State<ChatScreen> {
           fMsg.docs.map((e) => ChatModel.fromJson(e.data())).toList();
 
       FBHelper().sendMessage(
-          cu?.uid ?? '',
-          cu?.email ?? '',
-          v,
-          chatroomId,
-          date,
-          fMsgdata.first.message.toString(),
-          widget.userModel.uid.toString());
-
-      chat.clear();
+        cu?.uid ?? '',
+        cu?.email ?? '',
+        v,
+        chatroomId,
+        date,
+        fMsgdata.first.message.toString(),
+        widget.userModel.uid.toString(),
+      );
 
       if (!cc.friendsIdList.contains(widget.userModel.uid)) {
         await FBHelper().addFriend(widget.userModel.uid.toString());
-        cc.getfriendList();
+        await cc.getfriendList();
       }
+      print(cc.friendsList.length);
+      print(cc.friendsList.map((e) => e.fullname));
     }
   }
 
@@ -157,9 +159,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               child: Obx(() {
-                // print(cc.list?.map(
-                //   (element) => element.toJson(),
-                // ));
                 return ListView.builder(
                   controller: scrollController,
                   keyboardDismissBehavior:

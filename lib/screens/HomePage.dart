@@ -1,25 +1,17 @@
-import 'package:chat_demo/Firebase/FirebaseHelper.dart';
+import 'package:chat_demo/Utils/Utils.dart';
 import 'package:chat_demo/controllers/ChatScreenController.dart';
-import 'package:chat_demo/models/UserModel.dart';
 import 'package:chat_demo/screens/SearchUserScreen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'LoginScreen.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  ChatScreenController cc = ChatScreenController();
-
-  @override
   Widget build(BuildContext context) {
+    ChatScreenController cc = Get.put(ChatScreenController());
     cc.getfriendList();
     return Scaffold(
       appBar: AppBar(
@@ -52,9 +44,7 @@ class _HomePageState extends State<HomePage> {
       }),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => SearchUserScreen()));
-          // Get.to(() => const SearchUserScreen());
+          Utils.pageChange(const SearchUserScreen());
         },
         backgroundColor: Colors.blue,
         child: const Icon(
