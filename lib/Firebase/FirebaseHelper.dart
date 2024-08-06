@@ -115,13 +115,8 @@ class FBHelper {
         .update(userModel.toJson());
   }
 
-  Future<void> sendMessage(
-    String senderId,
-    String senderEmail,
-    String message,
-    String chatroomId,
-    String date,
-  ) async {
+  Future<void> sendMessage(String senderId, String senderEmail, String message,
+      String chatroomId, String date,String slug) async {
     var doc1 = await FirebaseFirestore.instance
         .collection(FBHelper.chats)
         .doc(chatroomId)
@@ -131,27 +126,30 @@ class FBHelper {
       "last_msg": message,
       "sender_email": senderEmail,
       "senderId": senderId,
+      "slug": slug,
     });
 
     doc1.reference
         .collection(FBHelper.newMsg)
         .doc(DateTime.now().millisecondsSinceEpoch.toString())
         .set(ChatModel(
-                message: message,
-                senderId: senderId,
-                senderEmail: senderEmail,
-                time: date)
-            .toJson());
+          message: message,
+          senderId: senderId,
+          senderEmail: senderEmail,
+          time: date,
+          slug: slug,
+        ).toJson());
 
     doc1.reference
         .collection(messages)
         .doc(DateTime.now().millisecondsSinceEpoch.toString())
         .set(ChatModel(
-                message: message,
-                senderId: senderId,
-                senderEmail: senderEmail,
-                time: date)
-            .toJson());
+          message: message,
+          senderId: senderId,
+          senderEmail: senderEmail,
+          time: date,
+          slug: slug,
+        ).toJson());
   }
 
   Future<void> addFriend(String receiverId) async {

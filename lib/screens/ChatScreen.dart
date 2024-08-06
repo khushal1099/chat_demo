@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:chat_demo/Firebase/FirebaseHelper.dart';
 import 'package:chat_demo/Utils/SizeUtils.dart';
 import 'package:chat_demo/Utils/Utils.dart';
@@ -64,6 +63,7 @@ class _ChatScreenState extends State<ChatScreen> {
       (event) {
         if (event.docs.isNotEmpty) {
           var v = event.docs.map((e) => ChatModel.fromJson(e.data())).last;
+          print(v.message);
           cc.list?.value.removeWhere((element) => element.time == v.time);
           cc.list?.value.add(v);
           cc.list?.value.sort((a, b) => b.time!.compareTo(a.time!));
@@ -92,17 +92,13 @@ class _ChatScreenState extends State<ChatScreen> {
           senderEmail: cu?.email ?? "",
           senderId: cu?.uid,
           time: date,
+          slug: "Text"
         ),
       );
       cc.list?.refresh();
 
       await FBHelper().sendMessage(
-        cu?.uid ?? '',
-        cu?.email ?? '',
-        v,
-        chatroomId,
-        date,
-      );
+          cu?.uid ?? '', cu?.email ?? '', v, chatroomId, date, 'Text');
 
       if (!cc.friendsIdList.contains(widget.userModel.uid)) {
         await FBHelper().addFriend(widget.userModel.uid.toString());
@@ -170,18 +166,42 @@ class _ChatScreenState extends State<ChatScreen> {
                                       widget.userModel.profilePic.toString())
                                   : null,
                             ),
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            margin: const EdgeInsets.only(bottom: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.blue,
-                              borderRadius: BorderRadius.circular(10),
+                          if (msg?.slug == "Text")
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              margin: const EdgeInsets.only(bottom: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.blue,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                msg?.message ?? '',
+                                style: const TextStyle(color: Colors.black),
+                              ),
                             ),
-                            child: Text(
-                              msg?.message ?? '',
-                              style: const TextStyle(color: Colors.black),
+                          if (msg?.slug == "Image")
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              margin: const EdgeInsets.only(bottom: 4),
+                              height: 150,
+                              width: 150,
+                              decoration: BoxDecoration(
+                                color: const Color(0xff101010),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Image.network(
+                                msg?.message ?? '',
+                                fit: BoxFit.cover,
+                                frameBuilder: (context, child, frame,
+                                    wasSynchronouslyLoaded) {
+                                  if (frame != null) {
+                                    const Center(
+                                        child: CircularProgressIndicator());
+                                  }
+                                  return child;
+                                },
+                              ),
                             ),
-                          ),
                         ],
                       );
                     },
@@ -213,7 +233,30 @@ class _ChatScreenState extends State<ChatScreen> {
                         )
                       : IconButton(
                           onPressed: () {
-                            Utils.pageChange(const CameraScreen());
+                            Utils.pageChange(
+                                CameraScreen(
+                                  chatroomId: chatroomId,
+                                  userModel: widget.userModel,
+                                ), onBackScreen: () async {
+                              stream = await FBHelper()
+                                  .getNewMsg(chatroomId.toString());
+                              stream?.listen(
+                                (event) {
+                                  if (event.docs.isNotEmpty) {
+                                    var v = event.docs
+                                        .map(
+                                            (e) => ChatModel.fromJson(e.data()))
+                                        .last;
+                                    print(v.message);
+                                    cc.list?.value.removeWhere(
+                                        (element) => element.time == v.time);
+                                    cc.list?.value.add(v);
+                                    cc.list?.value.sort(
+                                        (a, b) => b.time!.compareTo(a.time!));
+                                  }
+                                },
+                              );
+                            });
                           },
                           icon: Icon(
                             Icons.camera_alt,
