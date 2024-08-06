@@ -1,3 +1,4 @@
+import 'package:chat_demo/Utils/Utils.dart';
 import 'package:chat_demo/controllers/ChatScreenController.dart';
 import 'package:chat_demo/controllers/SearchUserScreenController.dart';
 import 'package:chat_demo/models/UserModel.dart';
@@ -80,11 +81,7 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                               var user = sData[index];
                               return ListTile(
                                 onTap: () {
-                                  Navigator.push(context, MaterialPageRoute(
-                                    builder: (context) {
-                                      return ChatScreen(userModel: user);
-                                    },
-                                  ));
+                                  Utils.pageChange(ChatScreen(userModel: user));
                                 },
                                 title: Text(user.fullname ?? ''),
                                 subtitle: Text(user.email ?? ''),
@@ -111,12 +108,7 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                                 var d = uData[index];
                                 return ListTile(
                                   onTap: () {
-
-                                    Navigator.push(context, MaterialPageRoute(
-                                      builder: (context) {
-                                        return ChatScreen(userModel: d);
-                                      },
-                                    ));
+                                    Utils.pageChange(ChatScreen(userModel: d));
                                   },
                                   title: Text(d.fullname.toString()),
                                   subtitle: Text(d.email.toString()),

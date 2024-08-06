@@ -4,7 +4,6 @@ import 'package:chat_demo/models/UserModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:get/get.dart';
 
 class FBHelper {
   static final FBHelper _obj = FBHelper._();
@@ -117,15 +116,12 @@ class FBHelper {
   }
 
   Future<void> sendMessage(
-      String senderId,
-      String senderEmail,
-      String message,
-      String chatroomId,
-      String date,
-      String firstMsg,
-      String receiverId) async {
-    var cu = FirebaseAuth.instance.currentUser;
-
+    String senderId,
+    String senderEmail,
+    String message,
+    String chatroomId,
+    String date,
+  ) async {
     var doc1 = await FirebaseFirestore.instance
         .collection(FBHelper.chats)
         .doc(chatroomId)
@@ -158,7 +154,7 @@ class FBHelper {
             .toJson());
   }
 
-  Future<void> addFriend(String receiverId)async{
+  Future<void> addFriend(String receiverId) async {
     var cu = FirebaseAuth.instance.currentUser;
     await FirebaseFirestore.instance
         .collection(FBHelper.users)
@@ -173,8 +169,6 @@ class FBHelper {
         .collection(FBHelper.friends)
         .doc(cu?.uid)
         .set({'friendId': cu?.uid});
-
-
   }
 
   Future<void> removeNewMSgCol(String chatroomId) async {

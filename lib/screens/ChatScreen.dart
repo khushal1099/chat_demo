@@ -1,15 +1,18 @@
+import 'dart:developer';
+
 import 'package:chat_demo/Firebase/FirebaseHelper.dart';
 import 'package:chat_demo/Utils/SizeUtils.dart';
+import 'package:chat_demo/Utils/Utils.dart';
 import 'package:chat_demo/controllers/ChatScreenController.dart';
 import 'package:chat_demo/models/ChatRoomModel.dart';
 import 'package:chat_demo/models/UserModel.dart';
+import 'package:chat_demo/screens/CameraScreen.dart';
 import 'package:chat_demo/screens/LoginScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../Utils/AppAssets.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserModel userModel;
@@ -36,7 +39,6 @@ class _ChatScreenState extends State<ChatScreen> {
       chatroomId = "${widget.userModel.uid}-${cu?.uid}";
     }
     getMoreMessages();
-
     super.initState();
   }
 
@@ -51,27 +53,27 @@ class _ChatScreenState extends State<ChatScreen> {
                 scrollController.position.minScrollExtent + 10 &&
             !isLoading) {
           isLoading = true;
-
-          cc.getMessages(chatroomId, cc.list!.first.time.toString());
+          cc.getMessages(chatroomId, cc.list?.value.last.time);
+          log('${cc.list?.value.map((data) => data.message)}');
           isLoading = false;
         }
       },
     );
-
     stream = await FBHelper().getNewMsg(chatroomId.toString());
     stream?.listen(
       (event) {
         if (event.docs.isNotEmpty) {
           var v = event.docs.map((e) => ChatModel.fromJson(e.data())).last;
-          cc.list?.removeWhere((element) => element.time == v.time);
-          cc.list?.add(v);
-          cc.list?.sort((a, b) => b.time!.compareTo(a.time!));
+          cc.list?.value.removeWhere((element) => element.time == v.time);
+          cc.list?.value.add(v);
+          cc.list?.value.sort((a, b) => b.time!.compareTo(a.time!));
         }
       },
     );
   }
 
   void sendMessage(var value, var message) async {
+    chat.clear();
     String? v;
     if (value != null && message == null) {
       v = value;
@@ -81,39 +83,33 @@ class _ChatScreenState extends State<ChatScreen> {
       v = message;
     }
 
-    var sn =
-        await FirebaseFirestore.instance.collection("Users").doc(cu?.uid).get();
-    var userData = UserModel.fromJson(sn.data() as Map<String, dynamic>);
     if (v != null) {
       String date = DateTime.now().toString();
-      cc.list?.insert(
-          0,
-          ChatModel(
-            message: v,
-            senderEmail: userData.email ?? "",
-            senderId: cu?.uid,
-            time: date,
-          ));
+      cc.list?.value.insert(
+        0,
+        ChatModel(
+          message: v,
+          senderEmail: cu?.email ?? "",
+          senderId: cu?.uid,
+          time: date,
+        ),
+      );
+      cc.list?.refresh();
 
-      var fMsg = await FBHelper().getMessages(chatroomId);
-      var fMsgdata =
-          fMsg.docs.map((e) => ChatModel.fromJson(e.data())).toList();
-
-      FBHelper().sendMessage(
-          cu?.uid ?? '',
-          cu?.email ?? '',
-          v,
-          chatroomId,
-          date,
-          fMsgdata.first.message.toString(),
-          widget.userModel.uid.toString());
-
-      chat.clear();
+      await FBHelper().sendMessage(
+        cu?.uid ?? '',
+        cu?.email ?? '',
+        v,
+        chatroomId,
+        date,
+      );
 
       if (!cc.friendsIdList.contains(widget.userModel.uid)) {
         await FBHelper().addFriend(widget.userModel.uid.toString());
-        cc.getfriendList();
+        await cc.getfriendList();
       }
+      print(cc.friendsList.length);
+      print(cc.friendsList.map((e) => e.fullname));
     }
   }
 
@@ -124,13 +120,6 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xff101010),
         foregroundColor: Colors.white,
-        leading: IconButton(
-          onPressed: () {
-            FBHelper().removeNewMSgCol(chatroomId);
-            Get.back();
-          },
-          icon: const Icon(CupertinoIcons.back),
-        ),
         title: Row(
           children: [
             CircleAvatar(
@@ -151,56 +140,54 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.blue.withOpacity(0.2),
-                image: const DecorationImage(
-                  image: AssetImage('assets/chat bg.jpg'),
+                image: DecorationImage(
+                  image: AssetImage(AppAssets.bg),
                   fit: BoxFit.cover,
                 ),
               ),
-              child: Obx(() {
-                // print(cc.list?.map(
-                //   (element) => element.toJson(),
-                // ));
-                return ListView.builder(
-                  controller: scrollController,
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.manual,
-                  itemCount: cc.list?.length,
-                  reverse: true,
-                  physics: const BouncingScrollPhysics(),
-                  itemBuilder: (context, index) {
-                    var msg = cc.list?[index];
-                    var isMyMsg = cu?.uid == msg?.senderId;
-                    return Row(
-                      mainAxisAlignment: isMyMsg
-                          ? MainAxisAlignment.end
-                          : MainAxisAlignment.start,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!isMyMsg)
-                          CircleAvatar(
-                            maxRadius: 10,
-                            backgroundImage: widget.userModel.profilePic != null
-                                ? NetworkImage(
-                                    widget.userModel.profilePic.toString())
-                                : null,
+              child: Obx(
+                () {
+                  return ListView.builder(
+                    controller: scrollController,
+                    itemCount: cc.list?.value.length,
+                    reverse: true,
+                    physics: const BouncingScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      var msg = cc.list?.value[index];
+                      var isMyMsg = cu?.uid == msg?.senderId;
+                      return Row(
+                        mainAxisAlignment: isMyMsg
+                            ? MainAxisAlignment.end
+                            : MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (!isMyMsg)
+                            CircleAvatar(
+                              maxRadius: 10,
+                              backgroundImage: widget.userModel.profilePic !=
+                                      null
+                                  ? NetworkImage(
+                                      widget.userModel.profilePic.toString())
+                                  : null,
+                            ),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            margin: const EdgeInsets.only(bottom: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              msg?.message ?? '',
+                              style: const TextStyle(color: Colors.black),
+                            ),
                           ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          margin: const EdgeInsets.only(bottom: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.blue,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            msg?.message ?? '',
-                            style: const TextStyle(color: Colors.black),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }),
+                        ],
+                      );
+                    },
+                  );
+                },
+              ),
             ),
           ),
           Container(
@@ -209,7 +196,6 @@ class _ChatScreenState extends State<ChatScreen> {
             color: const Color(0xff101010),
             child: Center(
               child: TFF(
-                outSideTap: true,
                 controller: chat,
                 onFieldSubmitted: (value) async {
                   sendMessage(value, null);
@@ -226,7 +212,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         )
                       : IconButton(
-                          onPressed: () {},
+                          onPressed: () {
+                            Utils.pageChange(const CameraScreen());
+                          },
                           icon: Icon(
                             Icons.camera_alt,
                             color: Colors.white.withOpacity(0.6),
@@ -246,5 +234,11 @@ class _ChatScreenState extends State<ChatScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    FBHelper().removeNewMSgCol(chatroomId);
+    super.dispose();
   }
 }

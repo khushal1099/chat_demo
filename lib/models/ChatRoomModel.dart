@@ -9,25 +9,29 @@ class ChatModel {
   String? senderId;
   String? senderEmail;
   String? time;
+  String? slug;
 
   ChatModel({
     this.message,
     this.senderId,
     this.senderEmail,
     this.time,
+    this.slug,
   });
 
   factory ChatModel.fromJson(Map<String, dynamic> json) => ChatModel(
-    message: json["message"],
-    senderId: json["senderId"],
-    senderEmail: json["senderEmail"],
-    time: json["time"],
-  );
+        message: json["message"],
+        senderId: json["senderId"],
+        senderEmail: json["senderEmail"],
+        time: json["time"],
+        slug: json["slug"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "message": message,
-    "senderId": senderId,
-    "senderEmail": senderEmail,
-    "time": time,
-  };
+        "message": message,
+        "senderId": senderId,
+        "senderEmail": senderEmail,
+        "time": time,
+        "slug": slug,
+      };
 }
