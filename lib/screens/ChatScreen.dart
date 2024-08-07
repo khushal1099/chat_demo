@@ -146,11 +146,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               child: Obx(
                 () {
-                  cc.list?.value.forEach(
-                    (element) {
-                      print(element.toJson());
-                    },
-                  );
                   return ListView.builder(
                     controller: scrollController,
                     itemCount: cc.list?.value.length,
@@ -158,33 +153,46 @@ class _ChatScreenState extends State<ChatScreen> {
                     physics: const BouncingScrollPhysics(),
                     itemBuilder: (context, index) {
                       var msg = cc.list?.value[index];
+
+                      if (index == 0) {
+                        print(msg?.message);
+                      }
                       var isMyMsg = cu?.uid == msg?.senderId;
-                      BorderRadius? fMsg;
+                      var radius = const Radius.circular(10);
+                      var zero = const Radius.circular(0);
+                      Radius topRight = zero;
+                      Radius topLeft = zero;
+                      Radius bottomLeft = zero;
+                      Radius bottomRight = zero;
                       if (index == cc.list!.value.length - 1 ||
-                          cc.list?.value[index + 1].senderId != msg?.senderId) {
+                          (cc.list?.value[index + 1].senderId !=
+                              msg?.senderId)) {
                         if (isMyMsg) {
-                          fMsg = const BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                          );
+                          topLeft = radius;
+                          topRight = radius;
                         } else {
-                          fMsg = const BorderRadius.only(
-                            topRight: Radius.circular(10),
-                          );
-                        }
-                      } else if (index == 0 ||
-                          cc.list?.value[index - 1].senderId != msg?.senderId) {
-                        if (isMyMsg) {
-                          fMsg = const BorderRadius.only(
-                            bottomLeft: Radius.circular(10),
-                          );
-                        } else {
-                          fMsg = const BorderRadius.only(
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
-                          );
+                          topRight = radius;
                         }
                       }
 
+                      if (index == 0 ||
+                          (cc.list?.value[index - 1].senderId !=
+                              msg?.senderId) ||
+                          cc.list?.value[index - 1].slug == "Image") {
+                        if (isMyMsg) {
+                          bottomLeft = radius;
+                        } else {
+                          bottomLeft = radius;
+                          bottomRight = radius;
+                        }
+                      }
+
+                      BorderRadius borderRadius = BorderRadius.only(
+                        topLeft: topLeft,
+                        topRight: topRight,
+                        bottomRight: bottomRight,
+                        bottomLeft: bottomLeft,
+                      );
                       bool profilePic = index == cc.list!.value.length - 1 ||
                           cc.list?.value[index + 1].senderId != msg?.senderId;
                       return Row(
@@ -222,7 +230,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   left: !isMyMsg && !profilePic ? 20 : 0),
                               decoration: BoxDecoration(
                                 color: Colors.blue,
-                                borderRadius: fMsg,
+                                borderRadius: borderRadius,
                               ),
                               child: Text(
                                 msg?.message ?? '',
