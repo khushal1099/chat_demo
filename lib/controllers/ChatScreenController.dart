@@ -18,6 +18,7 @@ class ChatScreenController extends GetxController {
   RxBool loadCamera = false.obs;
   List<CameraDescription>? cameras = [];
   CameraDescription? activeCamera;
+  Rx<Stream<QuerySnapshot<Map<String, dynamic>>>?> stream = Rx(null);
 
   @override
   void onInit() {
@@ -103,9 +104,6 @@ class ChatScreenController extends GetxController {
   }
 
   Future<void> initializeCamera(CameraDescription cameraDescription) async {
-    if (cameraController != null) {
-      await cameraController?.dispose();
-    }
     cameraController =
         CameraController(cameraDescription, ResolutionPreset.max);
 

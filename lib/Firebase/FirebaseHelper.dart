@@ -24,7 +24,7 @@ class FBHelper {
   Stream<QuerySnapshot<Map<String, dynamic>>> getSearchedUser(String value) {
     var data = FirebaseFirestore.instance
         .collection(FBHelper.users)
-        .where("fullname", isEqualTo: value)
+        .where("email", isEqualTo: value)
         .snapshots();
     return data;
   }
@@ -115,8 +115,14 @@ class FBHelper {
         .update(userModel.toJson());
   }
 
-  Future<void> sendMessage(String senderId, String senderEmail, String message,
-      String chatroomId, String date,String slug) async {
+  Future<void> sendMessage(
+    String senderId,
+    String senderEmail,
+    String message,
+    String chatroomId,
+    String date,
+    String slug,
+  ) async {
     var doc1 = await FirebaseFirestore.instance
         .collection(FBHelper.chats)
         .doc(chatroomId)

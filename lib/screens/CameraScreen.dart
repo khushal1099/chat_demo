@@ -9,8 +9,10 @@ import 'package:chat_demo/models/UserModel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 
 class CameraScreen extends StatefulWidget {
   final String chatroomId;
@@ -28,12 +30,25 @@ class _CameraScreenState extends State<CameraScreen> {
 
   void sendMessage() async {
     var cu = FirebaseAuth.instance.currentUser;
+
     if (cc.picture.value.isNotEmpty) {
+      final dir = await getTemporaryDirectory();
+      final targetPath = '${dir.path}/compressed_image${DateTime.now()}.jpg';
+      var compressedImage = await FlutterImageCompress.compressAndGetFile(
+        cc.picture.value,
+        targetPath,
+        quality: 90,
+        rotate: 0,
+        format: CompressFormat.jpeg,
+      );
+
+      print('compressedImage=========> ${compressedImage?.path}');
+
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('Chat_Image')
-          .child('${widget.userModel.uid}');
-      await storageRef.putFile(File(cc.picture.value));
+          .child(targetPath.replaceAll(dir.path, ''));
+      await storageRef.putFile(File(compressedImage!.path));
       final imageUrl = await storageRef.getDownloadURL();
       String date = DateTime.now().toString();
       cc.list?.value.insert(
@@ -67,6 +82,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
   @override
   Widget build(BuildContext context) {
+    cc.picture.value = '';
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: Container(
@@ -88,10 +104,12 @@ class _CameraScreenState extends State<CameraScreen> {
                       )
                     : cc.cameraController != null &&
                             cc.cameraController!.value.isInitialized
-                        ? Obx(() {
-                            cc.loadCamera.value;
-                            return CameraPreview(cc.cameraController!);
-                          })
+                        ? Obx(
+                            () {
+                              cc.loadCamera.value;
+                              return CameraPreview(cc.cameraController!);
+                            },
+                          )
                         : const Center(child: CircularProgressIndicator()),
               ),
             ),
@@ -130,31 +148,51 @@ class _CameraScreenState extends State<CameraScreen> {
                       ],
                     );
                   } else {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        IconButton(
-                          onPressed: () {
-                            cc.picture.value = '';
-                          },
-                          icon: const Icon(
-                            Icons.close,
-                            color: Colors.white,
-                            size: 50,
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: () {
+                              cc.picture.value = '';
+                            },
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                              ),
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            Get.back();
-                            sendMessage();
-                          },
-                          icon: const Icon(
-                            Icons.done,
-                            color: Colors.white,
-                            size: 50,
+                          ElevatedButton(
+                            style: ButtonStyle(
+                              backgroundColor:
+                                  WidgetStateProperty.all(Colors.white),
+                            ),
+                            onPressed: () {
+                              Get.back();
+                              sendMessage();
+                            },
+                            child: const Row(
+                              children: [
+                                Text(
+                                  'Send',
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 20,
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.black,
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     );
                   }
                 },

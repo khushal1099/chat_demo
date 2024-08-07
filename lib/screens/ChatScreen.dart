@@ -1,4 +1,3 @@
-import 'dart:developer';
 import 'package:chat_demo/Firebase/FirebaseHelper.dart';
 import 'package:chat_demo/Utils/SizeUtils.dart';
 import 'package:chat_demo/Utils/Utils.dart';
@@ -7,7 +6,6 @@ import 'package:chat_demo/models/ChatRoomModel.dart';
 import 'package:chat_demo/models/UserModel.dart';
 import 'package:chat_demo/screens/CameraScreen.dart';
 import 'package:chat_demo/screens/LoginScreen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -28,7 +26,6 @@ class _ChatScreenState extends State<ChatScreen> {
   var cu = FirebaseAuth.instance.currentUser;
   String chatroomId = '';
   ScrollController scrollController = ScrollController();
-  Stream<QuerySnapshot<Map<String, dynamic>>>? stream;
 
   @override
   void initState() {
@@ -49,23 +46,23 @@ class _ChatScreenState extends State<ChatScreen> {
     scrollController.addListener(
       () async {
         if (scrollController.offset <=
-                scrollController.position.minScrollExtent + 10 &&
+                scrollController.position.maxScrollExtent - 10 &&
             !isLoading) {
           isLoading = true;
           cc.getMessages(chatroomId, cc.list?.value.last.time);
-          log('${cc.list?.value.map((data) => data.message)}');
           isLoading = false;
         }
       },
     );
-    stream = await FBHelper().getNewMsg(chatroomId.toString());
-    stream?.listen(
+    cc.stream.value = await FBHelper().getNewMsg(chatroomId.toString());
+    cc.stream.value?.listen(
       (event) {
         if (event.docs.isNotEmpty) {
           var v = event.docs.map((e) => ChatModel.fromJson(e.data())).last;
           print(v.message);
           cc.list?.value.removeWhere((element) => element.time == v.time);
           cc.list?.value.add(v);
+          cc.list?.refresh();
           cc.list?.value.sort((a, b) => b.time!.compareTo(a.time!));
         }
       },
@@ -74,6 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void sendMessage(var value, var message) async {
     chat.clear();
+    cc.isSend.value = false;
     String? v;
     if (value != null && message == null) {
       v = value;
@@ -83,22 +81,27 @@ class _ChatScreenState extends State<ChatScreen> {
       v = message;
     }
 
-    if (v != null) {
+    if (v!.trim().isNotEmpty) {
       String date = DateTime.now().toString();
       cc.list?.value.insert(
         0,
         ChatModel(
-          message: v,
-          senderEmail: cu?.email ?? "",
-          senderId: cu?.uid,
-          time: date,
-          slug: "Text"
-        ),
+            message: v.trim(),
+            senderEmail: cu?.email ?? "",
+            senderId: cu?.uid,
+            time: date,
+            slug: "Text"),
       );
       cc.list?.refresh();
 
       await FBHelper().sendMessage(
-          cu?.uid ?? '', cu?.email ?? '', v, chatroomId, date, 'Text');
+        cu?.uid ?? '',
+        cu?.email ?? '',
+        v.trim(),
+        chatroomId,
+        date,
+        'Text',
+      );
 
       if (!cc.friendsIdList.contains(widget.userModel.uid)) {
         await FBHelper().addFriend(widget.userModel.uid.toString());
@@ -143,6 +146,11 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               child: Obx(
                 () {
+                  cc.list?.value.forEach(
+                    (element) {
+                      print(element.toJson());
+                    },
+                  );
                   return ListView.builder(
                     controller: scrollController,
                     itemCount: cc.list?.value.length,
@@ -151,28 +159,70 @@ class _ChatScreenState extends State<ChatScreen> {
                     itemBuilder: (context, index) {
                       var msg = cc.list?.value[index];
                       var isMyMsg = cu?.uid == msg?.senderId;
+                      BorderRadius? fMsg;
+                      if (index == cc.list!.value.length - 1 ||
+                          cc.list?.value[index + 1].senderId != msg?.senderId) {
+                        if (isMyMsg) {
+                          fMsg = const BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                          );
+                        } else {
+                          fMsg = const BorderRadius.only(
+                            topRight: Radius.circular(10),
+                          );
+                        }
+                      } else if (index == 0 ||
+                          cc.list?.value[index - 1].senderId != msg?.senderId) {
+                        if (isMyMsg) {
+                          fMsg = const BorderRadius.only(
+                            bottomLeft: Radius.circular(10),
+                          );
+                        } else {
+                          fMsg = const BorderRadius.only(
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10),
+                          );
+                        }
+                      }
+
+                      bool profilePic = index == cc.list!.value.length - 1 ||
+                          cc.list?.value[index + 1].senderId != msg?.senderId;
                       return Row(
                         mainAxisAlignment: isMyMsg
                             ? MainAxisAlignment.end
                             : MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (!isMyMsg)
-                            CircleAvatar(
-                              maxRadius: 10,
-                              backgroundImage: widget.userModel.profilePic !=
-                                      null
-                                  ? NetworkImage(
-                                      widget.userModel.profilePic.toString())
-                                  : null,
+                          if (!isMyMsg && profilePic || msg?.slug == "Image")
+                            Padding(
+                              padding: EdgeInsets.only(
+                                  top: msg?.slug == "Image" ? 10 : 0),
+                              child: CircleAvatar(
+                                maxRadius: 10,
+                                backgroundImage: widget.userModel.profilePic !=
+                                        null
+                                    ? NetworkImage(
+                                        widget.userModel.profilePic.toString())
+                                    : null,
+                              ),
                             ),
+                          const SizedBox(width: 5),
                           if (msg?.slug == "Text")
                             Container(
                               padding: const EdgeInsets.all(10),
-                              margin: const EdgeInsets.only(bottom: 4),
+                              margin: EdgeInsets.only(
+                                  bottom: (index == 0 ||
+                                              cc.list?.value[index - 1]
+                                                      .senderId !=
+                                                  msg?.senderId) &&
+                                          cc.list?.value.first.message !=
+                                              msg?.message
+                                      ? 10
+                                      : 0,
+                                  left: !isMyMsg && !profilePic ? 20 : 0),
                               decoration: BoxDecoration(
                                 color: Colors.blue,
-                                borderRadius: BorderRadius.circular(10),
+                                borderRadius: fMsg,
                               ),
                               child: Text(
                                 msg?.message ?? '',
@@ -181,8 +231,18 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                           if (msg?.slug == "Image")
                             Container(
-                              padding: const EdgeInsets.all(6),
-                              margin: const EdgeInsets.only(bottom: 4),
+                              clipBehavior: Clip.antiAlias,
+                              margin: EdgeInsets.only(
+                                bottom: (index == 0 ||
+                                            cc.list?.value[index - 1]
+                                                    .senderId !=
+                                                msg?.senderId) &&
+                                        cc.list?.value.first.message !=
+                                            msg?.message
+                                    ? 10
+                                    : 0,
+                                top: 10,
+                              ),
                               height: 150,
                               width: 150,
                               decoration: BoxDecoration(
@@ -194,9 +254,13 @@ class _ChatScreenState extends State<ChatScreen> {
                                 fit: BoxFit.cover,
                                 frameBuilder: (context, child, frame,
                                     wasSynchronouslyLoaded) {
-                                  if (frame != null) {
+                                  if (frame == null) {
                                     const Center(
-                                        child: CircularProgressIndicator());
+                                      child: CircularProgressIndicator(
+                                        color: Colors.grey,
+                                        backgroundColor: Colors.grey,
+                                      ),
+                                    );
                                   }
                                   return child;
                                 },
@@ -234,29 +298,11 @@ class _ChatScreenState extends State<ChatScreen> {
                       : IconButton(
                           onPressed: () {
                             Utils.pageChange(
-                                CameraScreen(
-                                  chatroomId: chatroomId,
-                                  userModel: widget.userModel,
-                                ), onBackScreen: () async {
-                              stream = await FBHelper()
-                                  .getNewMsg(chatroomId.toString());
-                              stream?.listen(
-                                (event) {
-                                  if (event.docs.isNotEmpty) {
-                                    var v = event.docs
-                                        .map(
-                                            (e) => ChatModel.fromJson(e.data()))
-                                        .last;
-                                    print(v.message);
-                                    cc.list?.value.removeWhere(
-                                        (element) => element.time == v.time);
-                                    cc.list?.value.add(v);
-                                    cc.list?.value.sort(
-                                        (a, b) => b.time!.compareTo(a.time!));
-                                  }
-                                },
-                              );
-                            });
+                              CameraScreen(
+                                chatroomId: chatroomId,
+                                userModel: widget.userModel,
+                              ),
+                            );
                           },
                           icon: Icon(
                             Icons.camera_alt,
@@ -265,7 +311,11 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                 ),
                 onChanged: (value) {
-                  cc.isSend.value = value.isNotEmpty;
+                  if (value.isNotEmpty) {
+                    cc.isSend.value = true;
+                  } else {
+                    cc.isSend.value = false;
+                  }
                 },
                 hintText: 'Enter Message',
                 hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
