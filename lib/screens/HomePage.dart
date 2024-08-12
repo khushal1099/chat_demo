@@ -1,5 +1,6 @@
 import 'package:chat_demo/Utils/Utils.dart';
 import 'package:chat_demo/controllers/ChatScreenController.dart';
+import 'package:chat_demo/screens/CartPage.dart';
 import 'package:chat_demo/screens/ChatScreen.dart';
 import 'package:chat_demo/screens/SearchUserScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,15 +19,28 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.blue,
         actions: [
-          IconButton(
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Get.offAll(const LoginScreen());
-            },
-            icon: const Icon(
-              Icons.logout,
-              color: Colors.white,
-            ),
+          Row(
+            children: [
+              IconButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Get.offAll(const LoginScreen());
+                },
+                icon: const Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                ),
+              ),
+              IconButton(
+                onPressed: () {
+                  Utils.pageChange(const CartPage());
+                },
+                icon: const Icon(
+                  Icons.shopping_cart,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ],
       ),

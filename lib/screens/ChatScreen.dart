@@ -59,7 +59,6 @@ class _ChatScreenState extends State<ChatScreen> {
       (event) {
         if (event.docs.isNotEmpty) {
           var v = event.docs.map((e) => ChatModel.fromJson(e.data())).last;
-          print(v.message);
           cc.list?.value.removeWhere((element) => element.time == v.time);
           cc.list?.value.add(v);
           cc.list?.refresh();
@@ -107,8 +106,6 @@ class _ChatScreenState extends State<ChatScreen> {
         await FBHelper().addFriend(widget.userModel.uid.toString());
         await cc.getfriendList();
       }
-      print(cc.friendsList.length);
-      print(cc.friendsList.map((e) => e.fullname));
     }
   }
 
@@ -166,7 +163,8 @@ class _ChatScreenState extends State<ChatScreen> {
                       Radius bottomRight = zero;
                       if (index == cc.list!.value.length - 1 ||
                           (cc.list?.value[index + 1].senderId !=
-                              msg?.senderId)) {
+                              msg?.senderId) ||
+                          (cc.list?.value[index + 1].slug == 'Image')) {
                         if (isMyMsg) {
                           topLeft = radius;
                           topRight = radius;
@@ -195,13 +193,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                       bool profilePic = index == cc.list!.value.length - 1 ||
                           cc.list?.value[index + 1].senderId != msg?.senderId;
+
                       return Row(
                         mainAxisAlignment: isMyMsg
                             ? MainAxisAlignment.end
                             : MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (!isMyMsg && profilePic || msg?.slug == "Image")
+                          if (!isMyMsg && profilePic ||
+                              (msg?.slug == "Image" && !isMyMsg))
                             Padding(
                               padding: EdgeInsets.only(
                                   top: msg?.slug == "Image" ? 10 : 0),
@@ -242,11 +242,15 @@ class _ChatScreenState extends State<ChatScreen> {
                               clipBehavior: Clip.antiAlias,
                               margin: EdgeInsets.only(
                                 bottom: (index == 0 ||
+                                                cc.list?.value[index - 1]
+                                                        .senderId !=
+                                                    msg?.senderId) &&
+                                            (cc.list?.value.first.message !=
+                                                msg?.message) ||
+                                        !(index == 0 ||
                                             cc.list?.value[index - 1]
                                                     .senderId !=
-                                                msg?.senderId) &&
-                                        cc.list?.value.first.message !=
-                                            msg?.message
+                                                msg?.senderId)
                                     ? 10
                                     : 0,
                                 top: 10,
@@ -303,19 +307,24 @@ class _ChatScreenState extends State<ChatScreen> {
                             color: Colors.white.withOpacity(0.6),
                           ),
                         )
-                      : IconButton(
-                          onPressed: () {
-                            Utils.pageChange(
-                              CameraScreen(
-                                chatroomId: chatroomId,
-                                userModel: widget.userModel,
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                Utils.pageChange(
+                                  CameraScreen(
+                                    chatroomId: chatroomId,
+                                    userModel: widget.userModel,
+                                  ),
+                                );
+                              },
+                              icon: Icon(
+                                Icons.camera_alt,
+                                color: Colors.white.withOpacity(0.6),
                               ),
-                            );
-                          },
-                          icon: Icon(
-                            Icons.camera_alt,
-                            color: Colors.white.withOpacity(0.6),
-                          ),
+                            ),
+                          ],
                         ),
                 ),
                 onChanged: (value) {

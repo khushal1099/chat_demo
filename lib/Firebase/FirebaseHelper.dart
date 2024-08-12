@@ -1,9 +1,24 @@
 import 'dart:io';
+import 'package:chat_demo/Utils/Utils.dart';
 import 'package:chat_demo/models/ChatRoomModel.dart';
 import 'package:chat_demo/models/UserModel.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:get/get.dart';
+import '../screens/HomePage.dart';
+
+Future<void> handleBackgroundMessage(RemoteMessage message) async {
+  Utils.print(message.notification?.title, tag: 'message.notification?.title');
+  Utils.print(message.notification?.body, tag: 'message.notification?.body');
+  Utils.print(message.data, tag: 'message.Payload');
+}
+
+void handleMessage(RemoteMessage? message) {
+  if (message == null) return;
+  Get.off(const HomePage(), arguments: message);
+}
 
 class FBHelper {
   static final FBHelper _obj = FBHelper._();
@@ -20,6 +35,7 @@ class FBHelper {
   static const newMsg = 'NewMessages';
   static const friends = 'Friends';
   static String? friendId;
+  static FirebaseMessaging fMessaging = FirebaseMessaging.instance;
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getSearchedUser(String value) {
     var data = FirebaseFirestore.instance
@@ -187,4 +203,21 @@ class FBHelper {
       },
     );
   }
+
+  static Future<void> init()async{
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      announcement: false,
+      badge: true,
+      carPlay: false,
+      criticalAlert: false,
+      provisional: false,
+      sound: true,
+    );
+
+    final token = await  fMessaging.getToken();
+
+    Utils.print(token, tag: 'Device Token');
+  }
 }
+

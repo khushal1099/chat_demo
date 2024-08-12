@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../Firebase/FirebaseHelper.dart';
+import '../models/ProductsModel.dart';
 
 class ChatScreenController extends GetxController {
   RxBool isSend = false.obs;
@@ -19,6 +20,8 @@ class ChatScreenController extends GetxController {
   List<CameraDescription>? cameras = [];
   CameraDescription? activeCamera;
   Rx<Stream<QuerySnapshot<Map<String, dynamic>>>?> stream = Rx(null);
+  Rx<List<Product>?> productList = Rx(null);
+  Rx icon = Rx(null);
 
   @override
   void onInit() {
