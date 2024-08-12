@@ -4,7 +4,8 @@
 
 import 'dart:convert';
 
-ProductModel productModelFromJson(String str) => ProductModel.fromJson(json.decode(str));
+ProductModel productModelFromJson(String str) =>
+    ProductModel.fromJson(json.decode(str));
 
 String productModelToJson(ProductModel data) => json.encode(data.toJson());
 
@@ -22,18 +23,23 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) => ProductModel(
-    products: json["products"] == null ? [] : List<Product>.from(json["products"]!.map((x) => Product.fromJson(x))),
-    total: json["total"],
-    skip: json["skip"],
-    limit: json["limit"],
-  );
+        products: json["products"] == null
+            ? []
+            : List<Product>.from(
+                json["products"]!.map((x) => Product.fromJson(x))),
+        total: json["total"],
+        skip: json["skip"],
+        limit: json["limit"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "products": products == null ? [] : List<dynamic>.from(products!.map((x) => x.toJson())),
-    "total": total,
-    "skip": skip,
-    "limit": limit,
-  };
+        "products": products == null
+            ? []
+            : List<dynamic>.from(products!.map((x) => x.toJson())),
+        "total": total,
+        "skip": skip,
+        "limit": limit,
+      };
 }
 
 class Product {
@@ -86,72 +92,78 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
-    id: json["id"],
-    title: json["title"],
-    description: json["description"],
-    category: categoryValues.map[json["category"]]!,
-    price: json["price"]?.toDouble(),
-    discountPercentage: json["discountPercentage"]?.toDouble(),
-    rating: json["rating"]?.toDouble(),
-    stock: json["stock"],
-    tags: json["tags"] == null ? [] : List<String>.from(json["tags"]!.map((x) => x)),
-    brand: json["brand"],
-    sku: json["sku"],
-    weight: json["weight"],
-    dimensions: json["dimensions"] == null ? null : Dimensions.fromJson(json["dimensions"]),
-    warrantyInformation: json["warrantyInformation"],
-    shippingInformation: json["shippingInformation"],
-    availabilityStatus: availabilityStatusValues.map[json["availabilityStatus"]],
-    reviews: json["reviews"] == null ? [] : List<Review>.from(json["reviews"]!.map((x) => Review.fromJson(x))),
-    returnPolicy: returnPolicyValues.map[json["returnPolicy"]],
-    minimumOrderQuantity: json["minimumOrderQuantity"],
-    meta: json["meta"] == null ? null : Meta.fromJson(json["meta"]),
-    images: json["images"] == null ? [] : List<String>.from(json["images"]!.map((x) => x)),
-    thumbnail: json["thumbnail"],
-  );
+        id: json["id"],
+        title: json["title"],
+        description: json["description"],
+        category: categoryValues.map[json["category"]],
+        price: json["price"]?.toDouble(),
+        discountPercentage: json["discountPercentage"]?.toDouble(),
+        rating: json["rating"]?.toDouble(),
+        stock: json["stock"],
+        tags: json["tags"] == null
+            ? []
+            : List<String>.from(json["tags"]!.map((x) => x)),
+        brand: json["brand"],
+        sku: json["sku"],
+        weight: json["weight"],
+        dimensions: json["dimensions"] == null
+            ? null
+            : Dimensions.fromJson(json["dimensions"]),
+        warrantyInformation: json["warrantyInformation"],
+        shippingInformation: json["shippingInformation"],
+        availabilityStatus:
+            availabilityStatusValues.map[json["availabilityStatus"]],
+        reviews: json["reviews"] == null
+            ? []
+            : List<Review>.from(
+                json["reviews"]!.map((x) => Review.fromJson(x))),
+        returnPolicy: returnPolicyValues.map[json["returnPolicy"]],
+        minimumOrderQuantity: json["minimumOrderQuantity"],
+        meta: json["meta"] == null ? null : Meta.fromJson(json["meta"]),
+        images: json["images"] == null
+            ? []
+            : List<String>.from(json["images"]!.map((x) => x)),
+        thumbnail: json["thumbnail"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "id": id,
-    "title": title,
-    "description": description,
-    "category": categoryValues.reverse[category],
-    "price": price,
-    "discountPercentage": discountPercentage,
-    "rating": rating,
-    "stock": stock,
-    "tags": tags == null ? [] : List<dynamic>.from(tags!.map((x) => x)),
-    "brand": brand,
-    "sku": sku,
-    "weight": weight,
-    "dimensions": dimensions?.toJson(),
-    "warrantyInformation": warrantyInformation,
-    "shippingInformation": shippingInformation,
-    "availabilityStatus": availabilityStatusValues.reverse[availabilityStatus],
-    "reviews": reviews == null ? [] : List<dynamic>.from(reviews!.map((x) => x.toJson())),
-    "returnPolicy": returnPolicyValues.reverse[returnPolicy],
-    "minimumOrderQuantity": minimumOrderQuantity,
-    "meta": meta?.toJson(),
-    "images": images == null ? [] : List<dynamic>.from(images!.map((x) => x)),
-    "thumbnail": thumbnail,
-  };
+        "id": id,
+        "title": title,
+        "description": description,
+        "category": categoryValues.reverse[category],
+        "price": price,
+        "discountPercentage": discountPercentage,
+        "rating": rating,
+        "stock": stock,
+        "tags": tags == null ? [] : List<dynamic>.from(tags!.map((x) => x)),
+        "brand": brand,
+        "sku": sku,
+        "weight": weight,
+        "dimensions": dimensions?.toJson(),
+        "warrantyInformation": warrantyInformation,
+        "shippingInformation": shippingInformation,
+        "availabilityStatus":
+            availabilityStatusValues.reverse[availabilityStatus],
+        "reviews": reviews == null
+            ? []
+            : List<dynamic>.from(reviews!.map((x) => x.toJson())),
+        "returnPolicy": returnPolicyValues.reverse[returnPolicy],
+        "minimumOrderQuantity": minimumOrderQuantity,
+        "meta": meta?.toJson(),
+        "images":
+            images == null ? [] : List<dynamic>.from(images!.map((x) => x)),
+        "thumbnail": thumbnail,
+      };
 }
 
-enum AvailabilityStatus {
-  IN_STOCK,
-  LOW_STOCK
-}
+enum AvailabilityStatus { IN_STOCK, LOW_STOCK }
 
 final availabilityStatusValues = EnumValues({
   "In Stock": AvailabilityStatus.IN_STOCK,
   "Low Stock": AvailabilityStatus.LOW_STOCK
 });
 
-enum Category {
-  BEAUTY,
-  FRAGRANCES,
-  FURNITURE,
-  GROCERIES
-}
+enum Category { BEAUTY, FRAGRANCES, FURNITURE, GROCERIES }
 
 final categoryValues = EnumValues({
   "beauty": Category.BEAUTY,
@@ -172,16 +184,16 @@ class Dimensions {
   });
 
   factory Dimensions.fromJson(Map<String, dynamic> json) => Dimensions(
-    width: json["width"]?.toDouble(),
-    height: json["height"]?.toDouble(),
-    depth: json["depth"]?.toDouble(),
-  );
+        width: json["width"]?.toDouble(),
+        height: json["height"]?.toDouble(),
+        depth: json["depth"]?.toDouble(),
+      );
 
   Map<String, dynamic> toJson() => {
-    "width": width,
-    "height": height,
-    "depth": depth,
-  };
+        "width": width,
+        "height": height,
+        "depth": depth,
+      };
 }
 
 class Meta {
@@ -198,18 +210,22 @@ class Meta {
   });
 
   factory Meta.fromJson(Map<String, dynamic> json) => Meta(
-    createdAt: json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
-    updatedAt: json["updatedAt"] == null ? null : DateTime.parse(json["updatedAt"]),
-    barcode: json["barcode"],
-    qrCode: json["qrCode"],
-  );
+        createdAt: json["createdAt"] == null
+            ? null
+            : DateTime.parse(json["createdAt"]),
+        updatedAt: json["updatedAt"] == null
+            ? null
+            : DateTime.parse(json["updatedAt"]),
+        barcode: json["barcode"],
+        qrCode: json["qrCode"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "createdAt": createdAt?.toIso8601String(),
-    "updatedAt": updatedAt?.toIso8601String(),
-    "barcode": barcode,
-    "qrCode": qrCode,
-  };
+        "createdAt": createdAt?.toIso8601String(),
+        "updatedAt": updatedAt?.toIso8601String(),
+        "barcode": barcode,
+        "qrCode": qrCode,
+      };
 }
 
 enum ReturnPolicy {
@@ -244,20 +260,20 @@ class Review {
   });
 
   factory Review.fromJson(Map<String, dynamic> json) => Review(
-    rating: json["rating"],
-    comment: json["comment"],
-    date: json["date"] == null ? null : DateTime.parse(json["date"]),
-    reviewerName: json["reviewerName"],
-    reviewerEmail: json["reviewerEmail"],
-  );
+        rating: json["rating"],
+        comment: json["comment"],
+        date: json["date"] == null ? null : DateTime.parse(json["date"]),
+        reviewerName: json["reviewerName"],
+        reviewerEmail: json["reviewerEmail"],
+      );
 
   Map<String, dynamic> toJson() => {
-    "rating": rating,
-    "comment": comment,
-    "date": date?.toIso8601String(),
-    "reviewerName": reviewerName,
-    "reviewerEmail": reviewerEmail,
-  };
+        "rating": rating,
+        "comment": comment,
+        "date": date?.toIso8601String(),
+        "reviewerName": reviewerName,
+        "reviewerEmail": reviewerEmail,
+      };
 }
 
 class EnumValues<T> {

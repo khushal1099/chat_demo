@@ -203,21 +203,4 @@ class FBHelper {
       },
     );
   }
-
-  static Future<void> init()async{
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
-
-    final token = await  fMessaging.getToken();
-
-    Utils.print(token, tag: 'Device Token');
-  }
 }
-

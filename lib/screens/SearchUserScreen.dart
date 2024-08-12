@@ -101,20 +101,27 @@ class _SearchUserScreenState extends State<SearchUserScreen> {
                             var uData = allData.map((item) {
                               return UserModel.fromJson(item.data());
                             }).toList();
-
-                            return ListView.builder(
-                              itemCount: uData.length,
-                              itemBuilder: (BuildContext context, int index) {
-                                var d = uData[index];
-                                return ListTile(
-                                  onTap: () {
-                                    Utils.pageChange(ChatScreen(userModel: d));
-                                  },
-                                  title: Text(d.fullname.toString()),
-                                  subtitle: Text(d.email.toString()),
-                                );
-                              },
-                            );
+                            if (uData.isEmpty) {
+                              return const Center(
+                                child:
+                                    Text("No Any Users Available on this App"),
+                              );
+                            } else {
+                              return ListView.builder(
+                                itemCount: uData.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  var d = uData[index];
+                                  return ListTile(
+                                    onTap: () {
+                                      Utils.pageChange(
+                                          ChatScreen(userModel: d));
+                                    },
+                                    title: Text(d.fullname.toString()),
+                                    subtitle: Text(d.email.toString()),
+                                  );
+                                },
+                              );
+                            }
                           },
                         );
                       }
